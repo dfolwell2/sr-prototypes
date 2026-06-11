@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ask My Network. Interactive prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0d0d0d",
+        indigo: { DEFAULT: "#4f46e5", dark: "#4338ca" },
+        emerald: { DEFAULT: "#059669" },
+        surface: { 1: "#faf9f9", 2: "#f6f4f4", 3: "#e8e3e3" },
+        line: "#e8e3e3",
+        muted: "#6f6868",
+        success: "#06752e",
+        warning: "#754c06",
+        danger: "#750606",
+        info: "#063075"
+      },
+      fontFamily: {
+        display: ["Outfit", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"]
+      },
+      borderRadius: { DEFAULT: "2px", sm: "2px", md: "2px", lg: "2px" }
+    }
+  }
+}
+</script>
+<style>
+  body { font-family: "Inter", sans-serif; color: #0d0d0d; }
+  .stat-gradient { background: linear-gradient(135deg, rgba(79,70,229,0.03), rgba(5,150,105,0.02)); }
+  .transition-fast { transition: all 100ms ease; }
+  [data-state-panel] { display: none; }
+  [data-state-panel].active { display: block; }
+  textarea:focus, input:focus { outline: none; border-color: #4f46e5; }
+</style>
+</head>
+<body class="bg-surface-2">
+
+<!-- ============================================================
+     PROTOTYPE CONTROLS. Not part of the product UI.
+     Click a state to preview it. Austin: delete this block.
+     ============================================================ -->
+<div class="bg-ink text-white px-4 py-2 font-mono text-xs flex items-center gap-2 flex-wrap">
+  <span class="opacity-60 mr-2">PROTOTYPE STATES:</span>
+  <button onclick="setState('loading')" class="px-2 py-1 border border-white/30 hover:bg-white/10">loading</button>
+  <button onclick="setState('ready')" class="px-2 py-1 border border-white/30 hover:bg-white/10">ready</button>
+  <button onclick="setState('sent')" class="px-2 py-1 border border-white/30 hover:bg-white/10">sent</button>
+  <button onclick="setState('cap_hit')" class="px-2 py-1 border border-white/30 hover:bg-white/10">cap_hit</button>
+  <button onclick="setState('job_closed')" class="px-2 py-1 border border-white/30 hover:bg-white/10">job_closed</button>
+  <button onclick="setState('not_linked')" class="px-2 py-1 border border-white/30 hover:bg-white/10">not_linked</button>
+  <button onclick="setState('disabled')" class="px-2 py-1 border border-white/30 hover:bg-white/10">disabled</button>
+  <button onclick="setState('fetch_failed')" class="px-2 py-1 border border-white/30 hover:bg-white/10">fetch_failed</button>
+</div>
+
+<!-- ============================================================
+     PANEL. Renders inside the Bullhorn custom menu action iframe
+     (popup modal). Target width 720 to 840px, min 600px.
+     Stimulus contract: data-controller="ask-network" with the
+     targets and actions annotated below.
+     ============================================================ -->
+<div class="max-w-[800px] mx-auto my-6 bg-surface-1 border border-line"
+     data-controller="ask-network"
+     data-ask-network-remaining-value="2"
+     data-ask-network-daily-cap-value="3">
+
+  <!-- ===== Header: always visible in every state ===== -->
+  <header class="flex items-start justify-between px-6 pt-5 pb-4 border-b border-line">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="font-display font-bold tracking-tight text-sm">Staffing Referrals</span>
+        <span class="text-line">|</span>
+        <h1 class="font-display font-semibold text-sm tracking-tight">Ask My Network</h1>
+      </div>
+      <p class="text-xs text-muted" data-ask-network-target="jobContext">
+        ICU Registered Nurse &middot; Nursing &middot; Salt Lake City, UT &middot; Job #48213
+      </p>
+    </div>
+    <!-- Remaining daily asks pill. Spec section 3: cap surfaced in UI -->
+    <div class="text-right shrink-0" data-ask-network-target="capPill">
+      <span class="inline-flex items-center gap-1.5 border border-line bg-surface-2 px-2.5 py-1">
+        <span class="font-mono text-xs font-medium" data-ask-network-target="remainingCount">2</span>
+        <span class="text-xs text-muted">of 3 asks left today</span>
+      </span>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       STATE: loading. On-demand JobOrder fetch (spec section 3,
+       job not yet synced). The only spinner in this surface:
+       initial load is not a user action, so the optimistic-UI
+       law does not apply here.
+       ========================================================= -->
+  <section data-state-panel="loading" class="px-6 py-16 text-center">
+    <svg class="animate-spin h-6 w-6 mx-auto mb-4 text-indigo" viewBox="0 0 24 24" fill="none">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"/>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"/>
+    </svg>
+    <p class="text-sm font-medium">Getting this job from Bullhorn</p>
+    <p class="text-xs text-muted mt-1">Usually takes a second or two</p>
+  </section>
+
+  <!-- =========================================================
+       STATE: ready. Coverage preview + pre-drafted message +
+       single send action. One primary CTA per screen.
+       ========================================================= -->
+  <section data-state-panel="ready" class="active">
+
+    <!-- Coverage preview. Spec section 3: matched count, engaged
+         count, candidate pool count. PostHog: ask_network_preview_shown -->
+    <div class="px-6 pt-5" data-ph-event="ask_network_preview_shown">
+      <div class="grid grid-cols-3 gap-px bg-line border border-line stat-gradient">
+        <div class="bg-surface-1/95 px-4 py-3">
+          <div class="font-mono text-2xl font-semibold" data-ask-network-target="matchedCount">23</div>
+          <div class="text-xs text-muted mt-0.5">matched ambassadors</div>
+        </div>
+        <div class="bg-surface-1/95 px-4 py-3">
+          <div class="font-mono text-2xl font-semibold text-emerald">14</div>
+          <div class="text-xs text-muted mt-0.5">active in last 90 days</div>
+        </div>
+        <div class="bg-surface-1/95 px-4 py-3">
+          <div class="font-mono text-2xl font-semibold">8</div>
+          <div class="text-xs text-muted mt-0.5">candidates in their reach</div>
+        </div>
+      </div>
+      <!-- Ambassador cap surfaced as network protection, not limitation.
+           Spec section 3: rolling 7-day ambassador cap -->
+      <p class="text-xs text-muted mt-2">
+        4 ambassadors are resting this week to keep response rates high. They are excluded from this ask.
+      </p>
+    </div>
+
+    <!-- Pre-drafted message. No blank text boxes: always pre-filled.
+         Editing fires PostHog ask_network_message_edited once. -->
+    <div class="px-6 pt-5">
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-xs font-medium text-muted uppercase tracking-wide font-display">Your message</label>
+        <span class="hidden text-xs font-mono text-warning border border-warning/30 px-1.5 py-0.5"
+              data-ask-network-target="editedBadge">edited</span>
+      </div>
+
+      <div class="border border-line bg-white">
+        <input type="text"
+               class="w-full px-3 py-2 text-sm border-b border-line bg-transparent transition-fast"
+               value="Could use your help with an ICU Registered Nurse opening"
+               data-ask-network-target="subjectField"
+               data-action="input->ask-network#markEdited">
+        <textarea rows="8"
+                  class="w-full px-3 py-2 text-sm leading-relaxed bg-transparent resize-y transition-fast"
+                  data-ask-network-target="messageField"
+                  data-action="input->ask-network#markEdited">Hi {{first_name}},
+
+I could use your help. We just opened an ICU Registered Nurse job in Salt Lake City and I thought of you. If you know someone who might be interested, send them this link:
+
+{{job_link}}
+
+Mandy</textarea>
+      </div>
+
+      <!-- Token chips: insert Mustache tokens at cursor.
+           Token names verified against V3::ReachOutService subs. -->
+      <div class="flex items-center gap-1.5 mt-2">
+        <span class="text-xs text-muted mr-1">Insert:</span>
+        <button class="font-mono text-xs border border-line bg-surface-2 px-2 py-0.5 hover:border-indigo transition-fast"
+                data-action="click->ask-network#insertToken" data-token="{{first_name}}">first_name</button>
+        <button class="font-mono text-xs border border-line bg-surface-2 px-2 py-0.5 hover:border-indigo transition-fast"
+                data-action="click->ask-network#insertToken" data-token="{{job_title}}">job_title</button>
+        <button class="font-mono text-xs border border-line bg-surface-2 px-2 py-0.5 hover:border-indigo transition-fast"
+                data-action="click->ask-network#insertToken" data-token="{{job_link}}">job_link</button>
+      </div>
+    </div>
+
+    <!-- Send. Single primary CTA. Optimistic UI: click goes straight
+         to sent state, no spinner. Button disables on first click
+         (duplicate-click guardrail, spec section 6).
+         PostHog: ask_network_ask_sent -->
+    <footer class="flex items-center justify-between px-6 py-4 mt-5 border-t border-line bg-surface-2/60">
+      <p class="text-xs text-muted">Sends by email through Staffing Referrals. Uses 1 of your 3 daily asks.</p>
+      <button class="h-9 px-4 bg-indigo hover:bg-indigo-dark text-white text-sm font-medium transition-fast disabled:opacity-50"
+              data-ask-network-target="sendButton"
+              data-action="click->ask-network#send"
+              data-ph-event="ask_network_ask_sent">
+        Send to 23 ambassadors
+      </button>
+    </footer>
+  </section>
+
+  <!-- =========================================================
+       STATE: sent. Celebrate with stats. Remaining asks decrement.
+       ========================================================= -->
+  <section data-state-panel="sent" class="px-6 py-12 text-center">
+    <svg class="h-10 w-10 mx-auto mb-4 text-emerald" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10" class="opacity-20" fill="currentColor" stroke="none"/>
+      <path d="M8 12.5l2.5 2.5L16 9" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h2 class="font-display font-semibold text-lg tracking-tight">Ask sent to 23 ambassadors</h2>
+    <p class="text-sm text-muted mt-2 max-w-sm mx-auto">
+      Replies and referrals land in Staffing Referrals automatically. You will see opens and clicks on your dashboard.
+    </p>
+    <div class="inline-flex items-center gap-6 mt-6 border border-line bg-surface-2 px-6 py-3">
+      <div><span class="font-mono text-lg font-semibold">23</span> <span class="text-xs text-muted">asks sent</span></div>
+      <div class="w-px h-6 bg-line"></div>
+      <div><span class="font-mono text-lg font-semibold" data-ask-network-target="remainingAfterSend">1</span> <span class="text-xs text-muted">ask left today</span></div>
+    </div>
+    <div class="mt-6">
+      <a href="#" class="text-sm text-indigo font-medium hover:underline">View this ask in Staffing Referrals</a>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       STATE: cap_hit. Recruiter daily cap reached. Friendly,
+       no error styling. PostHog: ask_network_cap_hit
+       ========================================================= -->
+  <section data-state-panel="cap_hit" class="px-6 py-12 text-center" data-ph-event="ask_network_cap_hit">
+    <div class="font-mono text-2xl font-semibold mb-3">3 <span class="text-muted text-lg">of</span> 3</div>
+    <h2 class="font-display font-semibold text-lg tracking-tight">You have used all 3 asks for today</h2>
+    <p class="text-sm text-muted mt-2 max-w-sm mx-auto">
+      Daily limits keep your network responsive. Your asks reset at midnight.
+    </p>
+    <div class="mt-6">
+      <a href="#" class="text-sm text-indigo font-medium hover:underline">See how your sent asks are doing</a>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       STATE: job_closed. Read-only, no send. Spec section 3.
+       ========================================================= -->
+  <section data-state-panel="job_closed" class="px-6 py-12 text-center">
+    <h2 class="font-display font-semibold text-lg tracking-tight">This job is closed in Bullhorn</h2>
+    <p class="text-sm text-muted mt-2 max-w-sm mx-auto">
+      Network asks are only available for open jobs. Reopen the job in Bullhorn to send an ask.
+    </p>
+  </section>
+
+  <!-- =========================================================
+       STATE: not_linked. Bullhorn UserID has no SR recruiter
+       (users.ats_id miss). Spec section 3.
+       ========================================================= -->
+  <section data-state-panel="not_linked" class="px-6 py-12 text-center">
+    <h2 class="font-display font-semibold text-lg tracking-tight">Your Bullhorn account is not linked to Staffing Referrals yet</h2>
+    <p class="text-sm text-muted mt-2 max-w-sm mx-auto">
+      Ask your Staffing Referrals admin to connect your account. It takes about a minute.
+    </p>
+  </section>
+
+  <!-- =========================================================
+       STATE: disabled. Company kill switch / flag off. Spec
+       section 6: flipping the flag hides this surface.
+       ========================================================= -->
+  <section data-state-panel="disabled" class="px-6 py-12 text-center">
+    <h2 class="font-display font-semibold text-lg tracking-tight">Ask My Network is not enabled for your team</h2>
+    <p class="text-sm text-muted mt-2 max-w-sm mx-auto">
+      Your Staffing Referrals admin can turn it on.
+    </p>
+  </section>
+
+  <!-- =========================================================
+       STATE: fetch_failed. On-demand Bullhorn fetch failed.
+       Retry state, never a dead end. Spec section 3.
+       ========================================================= -->
+  <section data-state-panel="fetch_failed" class="px-6 py-12 text-center">
+    <h2 class="font-display font-semibold text-lg tracking-tight">We could not pull this job from Bullhorn</h2>
+    <p class="text-sm text-muted mt-2 max-w-sm mx-auto">
+      This is usually temporary. Give it a moment and try again.
+    </p>
+    <button class="h-9 px-4 mt-6 bg-indigo hover:bg-indigo-dark text-white text-sm font-medium transition-fast"
+            data-action="click->ask-network#retry"
+            onclick="fakeRetry()">
+      Try again
+    </button>
+  </section>
+
+</div>
+
+<p class="max-w-[800px] mx-auto text-center font-mono text-[11px] text-muted pb-2">
+  AI-drafted prototype 2026-06-11. Spec: ask-my-network-spec.md. Not production code.
+</p>
+<!-- Demo proof of the Bullhorn handshake: shows the query params
+     Bullhorn appends to the custom menu action URL. -->
+<p id="bh-params" class="max-w-[800px] mx-auto text-center font-mono text-[11px] text-muted pb-8"></p>
+
+<script>
+/* Prototype-only behavior. The data-action / data-*-target attributes
+   above are the proposed Stimulus contract; this script fakes it so
+   the panel is clickable without Rails. Austin: see HANDOFF.md. */
+function setState(name) {
+  document.querySelectorAll("[data-state-panel]").forEach(function (el) {
+    el.classList.toggle("active", el.dataset.statePanel === name);
+  });
+  var cap = document.querySelector("[data-ask-network-target='capPill']");
+  cap.style.visibility = (name === "not_linked" || name === "disabled" || name === "loading") ? "hidden" : "visible";
+}
+function fakeRetry() {
+  setState("loading");
+  setTimeout(function () { setState("ready"); }, 1200);
+}
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-action]");
+  if (!btn) return;
+  var action = btn.dataset.action;
+  if (action.indexOf("#send") > -1) {
+    btn.disabled = true; /* duplicate-click guardrail */
+    var remaining = document.querySelector("[data-ask-network-target='remainingCount']");
+    remaining.textContent = Math.max(0, parseInt(remaining.textContent, 10) - 1);
+    setState("sent"); /* optimistic: no spinner on user action */
+  }
+  if (action.indexOf("#insertToken") > -1) {
+    var field = document.querySelector("[data-ask-network-target='messageField']");
+    var pos = field.selectionStart || field.value.length;
+    field.value = field.value.slice(0, pos) + btn.dataset.token + field.value.slice(pos);
+    field.focus();
+    markEdited();
+  }
+});
+function markEdited() {
+  document.querySelector("[data-ask-network-target='editedBadge']").classList.remove("hidden");
+}
+document.querySelectorAll("[data-ask-network-target='messageField'], [data-ask-network-target='subjectField']").forEach(function (el) {
+  el.addEventListener("input", markEdited, { once: true });
+});
+(function showBullhornHandshake() {
+  var q = new URLSearchParams(location.search);
+  var out = document.getElementById("bh-params");
+  if (q.get("EntityID") || q.get("UserID")) {
+    out.textContent = "Bullhorn handshake received: EntityType=" + (q.get("EntityType") || "?") +
+      " EntityID=" + (q.get("EntityID") || "?") +
+      " UserID=" + (q.get("UserID") || "?") +
+      " CorporationID=" + (q.get("CorporationID") || "?");
+    var ctx = document.querySelector("[data-ask-network-target='jobContext']");
+    if (q.get("EntityID")) ctx.textContent = ctx.textContent.replace("#48213", "#" + q.get("EntityID"));
+  } else {
+    out.textContent = "Opened outside Bullhorn: no EntityID/UserID parameters received.";
+  }
+})();
+</script>
+</body>
+</html>
