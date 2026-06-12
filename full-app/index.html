@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staffing Referrals. Embedded App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0d0d0d",
+        indigo: { DEFAULT: "#4f46e5", dark: "#4338ca" },
+        emerald: { DEFAULT: "#059669" },
+        surface: { 1: "#faf9f9", 2: "#f6f4f4", 3: "#e8e3e3" },
+        line: "#e8e3e3",
+        muted: "#6f6868",
+        success: "#06752e"
+      },
+      fontFamily: {
+        display: ["Outfit", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"]
+      },
+      borderRadius: { DEFAULT: "2px", sm: "2px", md: "2px", lg: "2px" }
+    }
+  }
+}
+</script>
+<style>
+  html, body { height: 100%; }
+  body { font-family: "Inter", sans-serif; color: #0d0d0d; }
+  .stat-gradient { background: linear-gradient(135deg, rgba(79,70,229,0.03), rgba(5,150,105,0.02)); }
+  [data-screen] { display: none; }
+  [data-screen].active { display: block; }
+  textarea:focus, input:focus { outline: none; border-color: #4f46e5; }
+
+  /* SendDrawer slide-over */
+  #drawer { transform: translateX(100%); transition: transform 200ms ease; }
+  #drawer.open { transform: translateX(0); }
+
+  /* Demo tooltip for decorative elements */
+  #demoTip { position: fixed; pointer-events: none; background: #0d0d0d; color: #fff; font-size: 11px; padding: 4px 8px; border-radius: 2px; opacity: 0; transition: opacity 120ms ease; z-index: 60; }
+  #demoTip.show { opacity: 1; }
+</style>
+</head>
+<body class="bg-surface-2 overflow-y-auto">
+
+<!-- ===== App shell: top nav. Demo replica, hand-built, no production markup. ===== -->
+<div class="min-h-full flex flex-col">
+<header class="bg-white border-b border-line px-6 h-12 flex items-center justify-between shrink-0 sticky top-0 z-40">
+  <div class="flex items-center gap-6">
+    <span class="font-display font-bold tracking-tight text-sm">Staffing Referrals</span>
+    <nav class="flex items-center gap-4 text-xs">
+      <button class="nav-link text-ink font-medium border-b-2 border-indigo pb-0.5" data-nav="dashboard">Home</button>
+      <button class="nav-link text-muted hover:text-ink" data-nav="jobs">Jobs</button>
+      <button class="nav-link text-muted hover:text-ink" data-demo>Ambassadors</button>
+      <button class="nav-link text-muted hover:text-ink" data-demo>Referrals</button>
+      <button class="nav-link text-muted hover:text-ink" data-demo>Rewards</button>
+    </nav>
+  </div>
+  <div class="flex items-center gap-3">
+    <span class="text-xs text-muted">No separate login. You are signed in through Bullhorn.</span>
+    <span class="w-7 h-7 bg-indigo text-white text-xs font-medium flex items-center justify-center">DF</span>
+  </div>
+</header>
+
+<main class="flex-1 max-w-[960px] w-full mx-auto px-6 py-6">
+
+  <!-- =========================================================
+       SCREEN 1: Dashboard landing
+       ========================================================= -->
+  <section data-screen="dashboard" class="active">
+    <div class="mb-5">
+      <h1 class="font-display font-semibold text-xl tracking-tight">Good morning, Dave</h1>
+      <p class="text-xs text-muted mt-1">Your network has been busy. Here is what matters today.</p>
+    </div>
+
+    <div class="grid grid-cols-3 gap-px bg-line border border-line stat-gradient mb-6">
+      <div class="bg-surface-1/95 px-5 py-4">
+        <div class="font-mono font-semibold text-2xl">1,284</div>
+        <div class="text-xs text-muted mt-1">pageviews on your shares this week</div>
+      </div>
+      <div class="bg-surface-1/95 px-5 py-4">
+        <div class="font-mono font-semibold text-2xl text-emerald">9</div>
+        <div class="text-xs text-muted mt-1">new referrals this week</div>
+      </div>
+      <div class="bg-surface-1/95 px-5 py-4">
+        <div class="font-mono font-semibold text-2xl">3</div>
+        <div class="text-xs text-muted mt-1">hand-raisers waiting on you</div>
+      </div>
+    </div>
+
+    <h2 class="font-display font-semibold text-sm tracking-tight mb-3">Priority signals</h2>
+    <div class="space-y-2 mb-6">
+      <div class="bg-white border border-line px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium">James Okafor raised his hand on ER Nurse, Provo</p>
+          <p class="text-xs text-muted mt-0.5">Referred by Maria Santos. Viewed the job page 4 times since yesterday.</p>
+        </div>
+        <button class="h-8 px-4 bg-indigo hover:bg-indigo-dark text-white text-xs font-medium transition-colors shrink-0 ml-4" data-demo>Reach Out</button>
+      </div>
+      <div class="bg-white border border-line px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium">Your ICU nights share is your best performer this month</p>
+          <p class="text-xs text-muted mt-0.5">412 pageviews, 3 referrals. Two similar jobs just opened.</p>
+        </div>
+        <button class="h-8 px-4 bg-white border border-line hover:border-indigo hover:text-indigo text-xs font-medium transition-colors shrink-0 ml-4" data-goto="jobs">Share another</button>
+      </div>
+      <div class="bg-white border border-line px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium">Maria Santos sent her 4th referral</p>
+          <p class="text-xs text-muted mt-0.5">She has earned $750 with you. A thank-you goes a long way.</p>
+        </div>
+        <button class="h-8 px-4 bg-white border border-line hover:border-indigo hover:text-indigo text-xs font-medium transition-colors shrink-0 ml-4" data-demo>Say Thanks</button>
+      </div>
+    </div>
+
+    <div class="border border-line stat-gradient px-5 py-4 flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium">Start with your network today</p>
+        <p class="text-xs text-muted mt-0.5">14 of your open jobs have warm matches in your network. Share them before the boards see them.</p>
+      </div>
+      <button class="h-9 px-5 bg-indigo hover:bg-indigo-dark text-white text-sm font-medium transition-colors shrink-0 ml-4" data-goto="jobs">See your Jobs</button>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SCREEN 2: Jobs list. Share opens the SendDrawer.
+       ========================================================= -->
+  <section data-screen="jobs">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h1 class="font-display font-semibold text-xl tracking-tight">Your Jobs</h1>
+        <p class="text-xs text-muted mt-1">Sorted by network reach. Share any job with the people who can fill it.</p>
+      </div>
+      <span class="text-xs text-muted border border-line bg-white px-2.5 py-1">14 jobs with warm matches</span>
+    </div>
+
+    <div class="space-y-2">
+      <div class="bg-white border border-line px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium">ICU Registered Nurse, Nights</p>
+          <p class="text-xs text-muted mt-0.5">Salt Lake City, UT &middot; $2,340/wk &middot; 13 weeks &middot; <span class="text-emerald font-mono">18 warm matches</span></p>
+        </div>
+        <button class="h-8 px-4 bg-indigo hover:bg-indigo-dark text-white text-xs font-medium transition-colors shrink-0 ml-4" id="shareICU">Share</button>
+      </div>
+      <div class="bg-white border border-line px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium">ER Nurse</p>
+          <p class="text-xs text-muted mt-0.5">Provo, UT &middot; $2,180/wk &middot; 13 weeks &middot; <span class="text-emerald font-mono">11 warm matches</span></p>
+        </div>
+        <button class="h-8 px-4 bg-white border border-line hover:border-indigo hover:text-indigo text-xs font-medium transition-colors shrink-0 ml-4" data-demo>Share</button>
+      </div>
+      <div class="bg-white border border-line px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium">Med-Surg RN</p>
+          <p class="text-xs text-muted mt-0.5">Ogden, UT &middot; $1,960/wk &middot; 26 weeks &middot; <span class="text-emerald font-mono">7 warm matches</span></p>
+        </div>
+        <button class="h-8 px-4 bg-white border border-line hover:border-indigo hover:text-indigo text-xs font-medium transition-colors shrink-0 ml-4" data-demo>Share</button>
+      </div>
+      <div class="bg-white border border-line px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium">Labor and Delivery RN</p>
+          <p class="text-xs text-muted mt-0.5">Murray, UT &middot; $2,410/wk &middot; 13 weeks &middot; <span class="text-emerald font-mono">5 warm matches</span></p>
+        </div>
+        <button class="h-8 px-4 bg-white border border-line hover:border-indigo hover:text-indigo text-xs font-medium transition-colors shrink-0 ml-4" data-demo>Share</button>
+      </div>
+    </div>
+    <p class="text-xs text-muted mt-4">Click Share on the ICU job to walk the live path. Other rows are display only in this demo.</p>
+  </section>
+
+</main>
+</div>
+
+<!-- =========================================================
+     SCREEN 3: SendDrawer. Slide-over, pre-drafted, one CTA.
+     ========================================================= -->
+<div id="drawerOverlay" class="fixed inset-0 bg-ink/20 hidden z-40"></div>
+<aside id="drawer" class="fixed top-0 right-0 h-full w-[420px] bg-surface-1 border-l border-line z-50 flex flex-col">
+  <header class="px-5 py-4 border-b border-line flex items-center justify-between">
+    <div>
+      <h2 class="font-display font-semibold text-sm tracking-tight">Share this Job</h2>
+      <p class="text-xs text-muted mt-0.5">ICU Registered Nurse, Nights &middot; Salt Lake City</p>
+    </div>
+    <button id="closeDrawer" class="text-muted hover:text-ink text-lg leading-none">&times;</button>
+  </header>
+
+  <div id="drawerBody" class="flex-1 overflow-y-auto px-5 py-4">
+    <p class="text-xs text-muted mb-2">Going to your 18 warm matches. Each gets your personal link.</p>
+    <div class="flex flex-wrap gap-1.5 mb-4">
+      <span class="text-xs border border-line bg-white px-2 py-0.5">Maria S.</span>
+      <span class="text-xs border border-line bg-white px-2 py-0.5">Devon P.</span>
+      <span class="text-xs border border-line bg-white px-2 py-0.5">Alicia M.</span>
+      <span class="text-xs border border-line bg-white px-2 py-0.5">+15 more</span>
+    </div>
+    <p class="text-xs text-muted mb-2">Pre-drafted. Edit or send as is.</p>
+    <div class="border border-line bg-white p-3">
+      <textarea class="w-full text-sm leading-relaxed border-0 resize-none bg-transparent" rows="7">Hi, I could use your help. We just opened an ICU nights role in Salt Lake City at $2,340/wk and you know the kind of people who would do well in it. If anyone comes to mind, send them your link and I will take care of the rest.
+
+Dave</textarea>
+    </div>
+  </div>
+
+  <div id="drawerSuccess" class="flex-1 px-5 py-12 text-center" style="display:none">
+    <div class="w-10 h-10 mx-auto mb-4 border border-emerald text-emerald flex items-center justify-center">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <p class="text-sm font-medium">Shared with 18 people</p>
+    <p class="text-xs text-muted mt-1">You will see pageviews on Home as they open it. First clicks usually land within the hour.</p>
+    <p class="text-xs text-muted mt-6">That is 2 shares today. You saved about 40 minutes versus working the boards.</p>
+  </div>
+
+  <footer class="px-5 py-4 border-t border-line">
+    <button id="sendDrawer" class="w-full h-9 bg-indigo hover:bg-indigo-dark text-white text-sm font-medium transition-colors">Share with 18 people</button>
+  </footer>
+</aside>
+
+<div id="demoTip">Display only in this demo</div>
+<p class="fixed bottom-2 left-3 font-mono text-[9px] text-[#b3aaaa] z-30" id="bh-params"></p>
+
+<script>
+  /* Demo navigation: dashboard <-> jobs; ICU Share opens the drawer;
+     everything decorative shows a demo tooltip instead of dead-clicking. */
+  function show(name) {
+    document.querySelectorAll("[data-screen]").forEach(function (s) { s.classList.remove("active"); });
+    document.querySelector('[data-screen="' + name + '"]').classList.add("active");
+    document.querySelectorAll(".nav-link[data-nav]").forEach(function (n) {
+      var on = n.getAttribute("data-nav") === name;
+      n.classList.toggle("text-ink", on); n.classList.toggle("font-medium", on);
+      n.classList.toggle("border-b-2", on); n.classList.toggle("border-indigo", on); n.classList.toggle("pb-0.5", on);
+      n.classList.toggle("text-muted", !on);
+    });
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll("[data-nav]").forEach(function (n) {
+    n.addEventListener("click", function () { show(n.getAttribute("data-nav")); });
+  });
+  document.querySelectorAll("[data-goto]").forEach(function (b) {
+    b.addEventListener("click", function () { show(b.getAttribute("data-goto")); });
+  });
+
+  var drawer = document.getElementById("drawer");
+  var overlay = document.getElementById("drawerOverlay");
+  function openDrawer() {
+    document.getElementById("drawerBody").style.display = "";
+    document.getElementById("drawerSuccess").style.display = "none";
+    document.getElementById("sendDrawer").style.display = "";
+    overlay.classList.remove("hidden");
+    requestAnimationFrame(function () { drawer.classList.add("open"); });
+  }
+  function closeDrawer() {
+    drawer.classList.remove("open");
+    overlay.classList.add("hidden");
+  }
+  document.getElementById("shareICU").addEventListener("click", openDrawer);
+  document.getElementById("closeDrawer").addEventListener("click", closeDrawer);
+  overlay.addEventListener("click", closeDrawer);
+  document.getElementById("sendDrawer").addEventListener("click", function () {
+    document.getElementById("drawerBody").style.display = "none";
+    document.getElementById("sendDrawer").style.display = "none";
+    document.getElementById("drawerSuccess").style.display = "";
+  });
+
+  /* Demo tooltip on decorative elements */
+  var tip = document.getElementById("demoTip");
+  document.querySelectorAll("[data-demo]").forEach(function (el) {
+    el.addEventListener("click", function (e) {
+      tip.style.left = (e.clientX + 10) + "px";
+      tip.style.top = (e.clientY - 10) + "px";
+      tip.classList.add("show");
+      setTimeout(function () { tip.classList.remove("show"); }, 1200);
+    });
+  });
+
+  var q = new URLSearchParams(location.search || "");
+  var out = document.getElementById("bh-params");
+  if (q.get("EntityID") || q.get("UserID")) {
+    out.textContent = "handshake: EntityID=" + (q.get("EntityID") || "?") + " UserID=" + (q.get("UserID") || "?");
+  } else {
+    out.textContent = "opened outside Bullhorn: no params received";
+  }
+</script>
+</body>
+</html>
