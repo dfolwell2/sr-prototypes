@@ -8,48 +8,55 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   /* Compact overview-card variant. Momentum & Clarity tokens:
-     2px radius, hairline #e8e3e3 borders, flat, no shadows. */
+     2px radius, hairline #e8e3e3 borders, flat, no shadows.
+     v1 LOCKED: one number, no "candidates in reach", no "resting" note. */
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: "Inter", sans-serif; color: #0d0d0d; background: #fff; padding: 12px 14px; }
-  .brand { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
+  .brand { display: flex; align-items: baseline; gap: 6px; margin-bottom: 12px; }
   .brand-name { font-family: "Outfit", sans-serif; font-weight: 700; font-size: 11px; letter-spacing: -0.01em; }
   .brand-sub { font-size: 10px; color: #6f6868; }
-  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 1px solid #e8e3e3; background: linear-gradient(135deg, rgba(79,70,229,0.03), rgba(5,150,105,0.02)); }
-  .stat { padding: 8px 10px; border-right: 1px solid #e8e3e3; }
-  .stat:last-child { border-right: none; }
-  .num { font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 20px; line-height: 1.1; }
-  .num.green { color: #059669; }
-  .lbl { font-size: 9.5px; color: #6f6868; margin-top: 2px; line-height: 1.3; }
-  .resting { font-size: 10px; color: #6f6868; margin: 8px 0 10px; }
+  .fit { display: flex; align-items: baseline; gap: 7px; }
+  .fit .big { font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 26px; line-height: 1; }
+  .fit .cap { font-size: 13px; font-weight: 500; }
+  .sub { font-size: 10.5px; color: #6f6868; margin: 5px 0 14px; line-height: 1.45; }
   .cta { display: block; width: 100%; height: 34px; background: #4f46e5; color: #fff; border: none; border-radius: 2px; font-family: "Inter", sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 100ms ease; }
   .cta:hover { background: #4338ca; }
+  .credits { font-size: 10px; color: #6f6868; margin-top: 8px; text-align: center; }
   .hs { font-family: "JetBrains Mono", monospace; font-size: 8.5px; color: #b3aaaa; margin-top: 8px; word-break: break-all; }
 </style>
 </head>
 <body>
   <div class="brand">
     <span class="brand-name">Staffing Referrals</span>
-    <span class="brand-sub">Network reach for this job</span>
+    <span class="brand-sub">Ask My Network</span>
   </div>
 
-  <div class="stats">
-    <div class="stat"><div class="num" id="matched">23</div><div class="lbl">matched ambassadors</div></div>
-    <div class="stat"><div class="num green">14</div><div class="lbl">active last 90 days</div></div>
-    <div class="stat"><div class="num">8</div><div class="lbl">candidates in reach</div></div>
+  <!-- One clear number: who fits this job. -->
+  <div class="fit">
+    <span class="big" id="matched">23</span>
+    <span class="cap">people in your network fit this job</span>
   </div>
+  <p class="sub">
+    Matched on this job's specialty and metro, active in the last 90 days.
+    Opted-out and recently-asked people are already excluded.
+  </p>
 
-  <p class="resting">4 ambassadors resting this week to keep response rates high.</p>
-
-  <button class="cta" id="openPanel">Ask My Network &middot; 2 of 3 asks left today</button>
+  <button class="cta" id="openPanel">Ask My Network</button>
+  <!-- Weekly credits count DOWN from 10, framed as protection, never a quota to fill. -->
+  <p class="credits"><span id="remaining">7</span> of 10 asks left this week</p>
 
   <p class="hs" id="bh-params"></p>
 
 <script>
-  /* Demo behavior: the card is the ambient signal; the click opens the
-     full panel (prototype) in a new window, passing Bullhorn's params through. */
+  /* Demo behavior: the card is the ambient signal; the click opens the full
+     8-state panel. Inside Bullhorn the card is a sandboxed iframe (popups are
+     blocked), so navigate THIS frame in place — the full panel renders right in
+     the card slot, carrying Bullhorn's EntityID/UserID params through. */
   var qs = location.search || "";
+  var panelUrl = "https://dfolwell2.github.io/sr-prototypes/ask-my-network/index.html" + qs;
   document.getElementById("openPanel").addEventListener("click", function () {
-    window.open("https://dfolwell2.github.io/sr-prototypes/ask-my-network/" + qs, "_blank", "width=840,height=720");
+    var popup = window.open(panelUrl, "_blank", "width=840,height=720");
+    if (!popup) { window.location.href = panelUrl; } // sandbox blocked the popup -> open in place
   });
   var q = new URLSearchParams(qs);
   var out = document.getElementById("bh-params");
