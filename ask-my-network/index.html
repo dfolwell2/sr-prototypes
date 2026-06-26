@@ -43,6 +43,21 @@ tailwind.config = {
   [data-channel-panel].active { display: block; }
   textarea:focus, input:focus { outline: none; border-color: #4f46e5; }
   .chan-tab[aria-selected="true"] { background:#0d0d0d; color:#fff; border-color:#0d0d0d; }
+
+  /* Motion — intentional, ease-out, reduced-motion safe. Enhances an
+     already-visible default; never gates content visibility. */
+  @keyframes rise { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:none; } }
+  @keyframes pop  { 0% { opacity:0; transform:scale(.86); } 60% { transform:scale(1.04); } 100% { opacity:1; transform:scale(1); } }
+  .rise { animation: rise .5s cubic-bezier(.22,1,.36,1) both; }
+  .pop  { animation: pop .5s cubic-bezier(.22,1,.36,1) both; }
+  /* Stagger: set per element via inline style --i; delay = i * 70ms. */
+  [style*="--i"].rise { animation-delay: calc(var(--i) * 70ms); }
+  /* Brief "AI re-drafting" pulse on the message body when the channel changes. */
+  @keyframes draftPulse { 0% { opacity:1; } 35% { opacity:.35; } 100% { opacity:1; } }
+  .drafting { animation: draftPulse .55s ease both; }
+  @media (prefers-reduced-motion: reduce) {
+    .rise, .pop, .drafting { animation: none !important; }
+  }
 </style>
 </head>
 <body class="bg-surface-2">
@@ -99,7 +114,7 @@ tailwind.config = {
   <section data-state-panel="ready" class="active">
 
     <!-- One clear number: who fits this job. -->
-    <div class="px-6 pt-5" data-ph-event="ask_network_preview_shown">
+    <div class="px-6 pt-5 rise" style="--i:0" data-ph-event="ask_network_preview_shown">
       <div class="flex items-baseline gap-2">
         <span class="font-mono text-3xl font-semibold" data-ask-network-target="matchedCount">12</span>
         <span class="text-sm">people in your network fit this job</span>
@@ -110,7 +125,7 @@ tailwind.config = {
     </div>
 
     <!-- Who you're asking: top matches with the real reason they fit. -->
-    <div class="px-6 pt-4">
+    <div class="px-6 pt-4 rise" style="--i:1">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-medium text-muted uppercase tracking-wide font-display">Who you're asking</span>
         <button class="text-xs text-indigo font-medium hover:underline" onclick="toggleMore()">see all 12</button>
@@ -164,7 +179,7 @@ tailwind.config = {
     </div>
 
     <!-- Channel toggle: Email (batch) or Text (TextUs / Bullhorn Messenger). -->
-    <div class="px-6 pt-5">
+    <div class="px-6 pt-5 rise" style="--i:2">
       <div class="flex items-center gap-2 mb-3">
         <button class="chan-tab text-sm font-medium border border-line px-3 py-1.5 transition-fast" aria-selected="true"
                 data-action="click->ask-network#selectChannel" data-channel="email" onclick="selectChannel('email')">Email</button>
@@ -224,7 +239,7 @@ Mandy</textarea>
     </div>
 
     <!-- Send. Single primary CTA. Optimistic UI. -->
-    <footer class="flex items-center justify-between px-6 py-4 mt-5 border-t border-line bg-surface-2/60">
+    <footer class="flex items-center justify-between px-6 py-4 mt-5 border-t border-line bg-surface-2/60 rise" style="--i:3">
       <p class="text-xs text-muted" data-ask-network-target="sendNote">Sends by email through Staffing Referrals. Uses 1 of your 10 weekly asks.</p>
       <button class="h-9 px-4 bg-indigo hover:bg-indigo-dark text-white text-sm font-medium transition-fast disabled:opacity-50 shrink-0"
               data-ask-network-target="sendButton"
@@ -239,15 +254,16 @@ Mandy</textarea>
        STATE: sent. Reward is the OUTCOME, not the spend.
        ========================================================= -->
   <section data-state-panel="sent" class="px-6 py-12 text-center">
-    <svg class="h-10 w-10 mx-auto mb-4 text-emerald" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <svg class="h-10 w-10 mx-auto mb-4 text-emerald pop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="10" class="opacity-20" fill="currentColor" stroke="none"/>
       <path d="M8 12.5l2.5 2.5L16 9" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
-    <h2 class="font-display font-semibold text-lg tracking-tight">Ask sent to 12 people</h2>
-    <p class="text-sm text-muted mt-2 max-w-sm mx-auto">
+    <h2 class="font-display font-semibold text-lg tracking-tight rise" style="--i:1">Ask sent to 12 people</h2>
+    <p class="text-sm text-muted mt-2 max-w-sm mx-auto rise" style="--i:2">
       Replies and referrals land in Staffing Referrals automatically. You will see opens, clicks, and who responds on your dashboard.
     </p>
-    <div class="inline-flex items-center gap-6 mt-6 border border-line bg-surface-2 px-6 py-3">
+    <!-- Variable reward: lead with the OUTCOME, not the spend. This is the dopamine. -->
+    <div class="inline-flex items-center gap-6 mt-6 border border-line bg-surface-2 px-6 py-3 rise" style="--i:3">
       <div><span class="font-mono text-lg font-semibold text-emerald">6</span> <span class="text-xs text-muted">replies this week</span></div>
       <div class="w-px h-6 bg-line"></div>
       <div><span class="font-mono text-lg font-semibold text-emerald">2</span> <span class="text-xs text-muted">referrals this week</span></div>
@@ -351,6 +367,7 @@ var loadingVerbs = [
   "Protecting your network…"
 ];
 var loadingTimer = null;
+var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 function startLoadingVerbs() {
   var el = document.querySelector("[data-ask-network-target='loadingVerb']");
   if (!el) return;
@@ -360,10 +377,22 @@ function startLoadingVerbs() {
   loadingTimer = setInterval(function () {
     i = (i + 1) % loadingVerbs.length;
     el.textContent = loadingVerbs[i];
-  }, 1100);
+  }, 680);
 }
 function stopLoadingVerbs() {
   if (loadingTimer) { clearInterval(loadingTimer); loadingTimer = null; }
+}
+/* Re-trigger the staggered entrance on the elements inside a freshly-shown
+   panel. Reflow reset so the animation replays each time the state is entered. */
+function revealPanel(name) {
+  if (reduceMotion) return;
+  var panel = document.querySelector("[data-state-panel='" + name + "'].active");
+  if (!panel) return;
+  panel.querySelectorAll(".rise, .pop").forEach(function (el) {
+    el.style.animation = "none";
+    void el.offsetWidth;
+    el.style.animation = "";
+  });
 }
 function setState(name) {
   document.querySelectorAll("[data-state-panel]").forEach(function (el) {
@@ -372,6 +401,7 @@ function setState(name) {
   var cap = document.querySelector("[data-ask-network-target='capPill']");
   cap.style.visibility = (name === "not_linked" || name === "disabled" || name === "loading") ? "hidden" : "visible";
   if (name === "loading") { startLoadingVerbs(); } else { stopLoadingVerbs(); }
+  revealPanel(name);
 }
 function selectChannel(name) {
   document.querySelectorAll(".chan-tab").forEach(function (t) {
@@ -389,6 +419,15 @@ function selectChannel(name) {
     note.textContent = "Sends by email through Staffing Referrals. Uses 1 of your 10 weekly asks.";
     btn.textContent = "Send to 12 · uses 1 ask";
   }
+  /* Reinforce "the AI re-drafts per channel": a brief pulse on the message. */
+  redraftPulse();
+}
+/* Labor illusion in miniature: a sub-second "re-drafting" pulse + verb so the
+   recruiter feels the AI re-personalizing for the chosen channel. */
+function redraftPulse() {
+  if (reduceMotion) return;
+  var body = document.querySelector("[data-channel-panel].active textarea");
+  if (body) { body.classList.remove("drafting"); void body.offsetWidth; body.classList.add("drafting"); }
 }
 function toggleMore() {
   var rows = document.querySelector("[data-ask-network-target='moreRows']");
@@ -430,6 +469,22 @@ document.addEventListener("click", function (e) {
     if (q.get("EntityID")) ctx.textContent = ctx.textContent.replace("#48213", "#" + q.get("EntityID"));
   } else {
     out.textContent = "Opened outside Bullhorn: no EntityID/UserID parameters received.";
+  }
+})();
+
+/* Labor illusion (Hook + Fogg): when the panel opens already drafted, first
+   show the AI doing the work — the spinner verbs make effort visible, which
+   raises perceived value before the one-tap action. A deliberate ~3s moment,
+   not latency. The dev state-bar still jumps straight to any state. */
+(function init() {
+  var ready = document.querySelector("[data-state-panel='ready']");
+  if (ready && ready.classList.contains("active")) {
+    setState("loading");
+    var hold = reduceMotion ? 200 : 2900;
+    setTimeout(function () { setState("ready"); }, hold);
+  } else {
+    var active = document.querySelector("[data-state-panel].active");
+    if (active) revealPanel(active.dataset.statePanel);
   }
 })();
 </script>
