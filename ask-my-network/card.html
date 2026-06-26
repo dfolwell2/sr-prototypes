@@ -43,7 +43,7 @@
 
   .who{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; margin-top:14px; }
   .who-lbl{ font-size:10px; font-weight:600; letter-spacing:0.04em; color:var(--muted); text-transform:uppercase; margin-bottom:7px; }
-  .rows{ border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .rows{ flex:1 1 auto; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
   .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 11px; transition:background 120ms cubic-bezier(.22,1,.36,1); }
   .row + .row{ border-top:1px solid var(--line-soft); }
   .row:hover{ background:var(--surface-2); }
@@ -52,7 +52,7 @@
   .row .tag{ font-family:"JetBrains Mono",monospace; font-size:10px; white-space:nowrap; }
   .row .tag.strong{ color:var(--emerald); }
   .row .tag.good{ color:var(--muted); }
-  .more{ font-size:10.5px; color:var(--muted); padding:7px 11px; border-top:1px solid var(--line-soft); background:var(--surface-2); }
+  .more{ margin-top:auto; font-size:10.5px; color:var(--muted); padding:7px 11px; border-top:1px solid var(--line-soft); background:var(--surface-2); }
 
   .foot{ margin-top:13px; }
   .cta{ position:relative; display:flex; align-items:center; justify-content:center; width:100%; height:36px; background:var(--indigo); color:#fff; border:none; border-radius:2px; font-family:"Inter",sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:background 110ms ease; overflow:hidden; }
@@ -99,7 +99,11 @@
         <div><div class="nm">Jenna Liu</div><div class="rs">Placed Telemetry RN · Ogden, UT · 6 weeks ago</div></div>
         <span class="tag good">good fit</span>
       </div>
-      <div class="more">+ 20 more, ranked by recent activity near this job</div>
+      <div class="row">
+        <div><div class="nm">Marcus Bell</div><div class="rs">Placed ICU RN · Las Vegas, NV · 8 weeks ago</div></div>
+        <span class="tag good">good fit</span>
+      </div>
+      <div class="more">+ 19 more, ranked by recent activity near this job</div>
     </div>
   </div>
 
