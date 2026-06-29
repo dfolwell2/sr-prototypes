@@ -47,7 +47,15 @@
   .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 11px; transition:background 120ms cubic-bezier(.22,1,.36,1); }
   .row + .row{ border-top:1px solid var(--line-soft); }
   .row:hover{ background:var(--surface-2); }
-  .row .nm{ font-size:12.5px; font-weight:500; line-height:1.2; }
+  .row .nm{ font-size:12.5px; font-weight:500; line-height:1.2; filter:blur(4.5px); user-select:none; transition:filter 260ms cubic-bezier(.22,1,.36,1); }
+  /* Names are hidden until the recruiter clicks Ask My Network (spinner → reveal).
+     Real build: the server should not send names to the ambient card at all —
+     blur here is the prototype stand-in for that. */
+  .rows.revealed .row .nm{ filter:none; user-select:auto; }
+  .rows.revealed .row:nth-child(1) .nm{ transition-delay:0s; }
+  .rows.revealed .row:nth-child(2) .nm{ transition-delay:.10s; }
+  .rows.revealed .row:nth-child(3) .nm{ transition-delay:.20s; }
+  .rows.revealed .row:nth-child(4) .nm{ transition-delay:.30s; }
   .row .rs{ font-size:10.5px; color:var(--body); margin-top:2px; line-height:1.25; }
   .row .tag{ font-family:"JetBrains Mono",monospace; font-size:10px; white-space:nowrap; }
   .row .tag.strong{ color:var(--emerald); }
@@ -55,9 +63,14 @@
   .more{ margin-top:auto; font-size:10.5px; color:var(--muted); padding:7px 11px; border-top:1px solid var(--line-soft); background:var(--surface-2); }
 
   .foot{ margin-top:13px; }
-  .cta{ position:relative; display:flex; align-items:center; justify-content:center; width:100%; height:36px; background:var(--indigo); color:#fff; border:none; border-radius:2px; font-family:"Inter",sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:background 110ms ease; overflow:hidden; }
+  .cta{ position:relative; display:flex; align-items:center; justify-content:center; gap:8px; width:100%; height:36px; background:var(--indigo); color:#fff; border:none; border-radius:2px; font-family:"Inter",sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:background 110ms ease; overflow:hidden; }
   .cta:hover{ background:var(--indigo-dark); }
   .cta:active{ transform:translateY(.5px); }
+  .cta:disabled{ cursor:default; }
+  .cta .spin{ width:13px; height:13px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .62s linear infinite; display:none; flex:none; }
+  .cta.loading .spin{ display:inline-block; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion:reduce){ .cta .spin{ animation:none; } }
   .credits{ font-size:10.5px; color:var(--muted); margin-top:8px; text-align:center; }
   .credits b{ font-family:"JetBrains Mono",monospace; font-weight:600; color:var(--body); }
   .hs{ font-family:"JetBrains Mono",monospace; font-size:8.5px; color:#bdb5b5; margin-top:8px; word-break:break-all; }
@@ -108,7 +121,7 @@
   </div>
 
   <div class="foot anim d4">
-    <button class="cta" id="openPanel">Ask My Network</button>
+    <button class="cta" id="openPanel"><span class="spin" aria-hidden="true"></span><span class="lbl">Ask My Network</span></button>
     <p class="credits"><b id="remaining">7</b> of 10 asks left this week</p>
     <p class="hs" id="bh-params"></p>
   </div>
@@ -120,10 +133,44 @@
      Bullhorn's EntityID/UserID params through. */
   var qs = location.search || "";
   var panelUrl = "https://dfolwell2.github.io/sr-prototypes/ask-my-network/index.html" + qs;
-  document.getElementById("openPanel").addEventListener("click", function () {
+
+  function openPanelWindow() {
     var popup = window.open(panelUrl, "_blank", "width=840,height=720");
     if (!popup) { window.location.href = panelUrl; }
+  }
+
+  /* First click: spin through labor-illusion verbs, then reveal the blurred names
+     in place. Second click (now "Open Ask My Network"): launch the full panel. */
+  var cta = document.getElementById("openPanel");
+  var lbl = cta.querySelector(".lbl");
+  var rows = document.querySelector(".rows");
+  var verbs = ["Scanning your network", "Ranking by recent activity", "Matching to this job", "Checking who's available"];
+  var revealed = false;
+  var reduce = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+  cta.addEventListener("click", function () {
+    if (revealed) { openPanelWindow(); return; }
+
+    if (reduce) { reveal(); return; }
+
+    cta.classList.add("loading");
+    cta.disabled = true;
+    var i = 0;
+    lbl.textContent = verbs[0];
+    var iv = setInterval(function () { i = (i + 1) % verbs.length; lbl.textContent = verbs[i]; }, 460);
+    setTimeout(function () {
+      clearInterval(iv);
+      cta.classList.remove("loading");
+      cta.disabled = false;
+      reveal();
+    }, 1500);
   });
+
+  function reveal() {
+    rows.classList.add("revealed");
+    revealed = true;
+    lbl.textContent = "Open Ask My Network";
+  }
   var q = new URLSearchParams(qs);
   var out = document.getElementById("bh-params");
   out.textContent = (q.get("EntityID") || q.get("UserID"))
